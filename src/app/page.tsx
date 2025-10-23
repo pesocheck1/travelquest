@@ -18,10 +18,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center">
       {/* Header */}
-      <header className="w-full flex justify-between items-center px-6 py-1 bg-gradient-to-r from-yellow-400 to-orange-400">
+      <header className="w-full flex justify-between items-center px-6 py-1 2xl:py-6 bg-gradient-to-r from-yellow-400 to-orange-400">
         <div
           onClick={() => (window.location.href = "/")}
-          className="flex items-center space-x-1 cursor-pointer hover:opacity-80 transition"
+          className="flex items-center space-x-1 2xl:space-x-0 cursor-pointer hover:opacity-80 transition"
           style={{ fontFamily: '"Glacial Indifference", sans-serif' }}
         >
           <Image
@@ -29,15 +29,16 @@ export default function HomePage() {
             alt="Travel Quest Logo"
             width={45}
             height={45}
+            className="2xl:w-[90px] 2xl:h-[90px]"
           />
-          <span className="text-white text-3xl relative top-3">
+          <span className="text-white text-3xl relative top-3 2xl:text-5xl 2xl:top-4">
             TRAVEL QUEST
           </span>
         </div>
         <div className="space-y-3">
-          <div className="w-13 h-[2px] bg-white"></div>
-          <div className="w-13 h-[2px] bg-white"></div>
-          <div className="w-13 h-[2px] bg-white"></div>
+          <div className="w-13 h-[2px] bg-white 2xl:w-20 2xl:h-[4px]"></div>
+          <div className="w-13 h-[2px] bg-white 2xl:w-20 2xl:h-[4px]"></div>
+          <div className="w-13 h-[2px] bg-white 2xl:w-20 2xl:h-[4px]"></div>
         </div>
       </header>
 
@@ -70,6 +71,7 @@ export default function HomePage() {
                     alt="Okinawa illustration"
                     width={150} // нужная ширина
                     height={150} // нужная высота
+                    className="2xl:m-16"
                   />
                 </div>
                 <button
@@ -93,7 +95,7 @@ export default function HomePage() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="border bg-white rounded-md px-4 py-2 w-2/4 mb-12 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border bg-white rounded-md px-4 py-2 w-2/4 mb-12 2xl:mb-34 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
               <h3 className="text-2xl font-bold mb-4 text-[#3e2723]">
                 Select your avatar
