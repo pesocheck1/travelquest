@@ -11,3 +11,16 @@
 body {
   font-family: "Noto Sans JP", sans-serif;
 }
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px 6px rgba(255, 223, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px 12px rgba(255, 223, 0, 0.7);
+  }
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 1.5s infinite ease-in-out;
+}

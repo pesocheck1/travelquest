@@ -1,0 +1,98 @@
+{
+  "Yanbaru": [
+    {
+      "name": "Cape Hedo",
+      "desc": "Northernmost point of Okinawa",
+      "image": "/locations/capehedo.png",
+      "category": "Nature",
+      "left": "80%",
+      "top": "5%"
+    },
+    {
+      "name": "Tataki Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Nature",
+      "left": "85%",
+      "top": "15%"
+    },
+    {
+      "name": "Tataki1 Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Hotel",
+      "left": "85%",
+      "top": "25%"
+    },
+    {
+      "name": "Tataki2 Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Food",
+      "left": "85%",
+      "top": "30%"
+    },
+    {
+      "name": "Tataki3 Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Outdoor",
+      "left": "85%",
+      "top": "35%"
+    },
+    {
+      "name": "Tataki4 Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Culture",
+      "left": "85%",
+      "top": "40%"
+    },
+    {
+      "name": "Tataki5 Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Beach",
+      "left": "75%",
+      "top": "65%"
+    },
+    {
+      "name": "Tataki6 Falls",
+      "desc": "Beautiful waterfall in Yanbaru",
+      "image": "/locations/tataki.png",
+      "category": "Shopping",
+      "left": "15%",
+      "top": "60%"
+    }
+  ],
+  "Motobu": [
+    {
+      "name": "Churaumi Aquarium",
+      "desc": "Famous aquarium",
+      "image": "/locations/aquarium.png",
+      "category": "Culture",
+      "left": "12%",
+      "top": "20%"
+    }
+  ],
+  "Central Okinawa": [
+    {
+      "name": "Churaumi Aquarium",
+      "desc": "Famous aquarium",
+      "image": "/locations/aquarium.png",
+      "category": "Culture",
+      "left": "12%",
+      "top": "20%"
+    }
+  ],
+  "South Okinawa": [
+    {
+      "name": "Churaumi Aquarium",
+      "desc": "Famous aquarium",
+      "image": "/locations/aquarium.png",
+      "category": "Culture",
+      "left": "12%",
+      "top": "20%"
+    }
+  ]
+}
