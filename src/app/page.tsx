@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import locationsDataJson from "../../data/locations.json";
+import jsPDF from "jspdf";
 
 type Location = {
   name: string;
@@ -11,6 +12,10 @@ type Location = {
   category: string;
   left: string;
   top: string;
+  place_id?: string;
+  lat?: number;
+  lng?: number;
+  visitTime?: number;
 };
 
 type LocationsData = {
@@ -85,6 +90,7 @@ export default function HomePage() {
     // сбрасываем данные шага preferences
     setStartingPoint("");
     setTransport("");
+    setStartTime("");
   };
 
   const handleBackToPreferences = () => {
@@ -112,14 +118,116 @@ export default function HomePage() {
 
   const [startingPoint, setStartingPoint] = useState("");
   const [transport, setTransport] = useState<Transport | "">("");
+  const [startTime, setStartTime] = useState<string>("");
 
   const [interests, setInterests] = useState<string[]>([]);
   const [step, setStep] = useState<
-    "start" | "avatar" | "preferences" | "map" | "activities" | "locations"
+    | "start"
+    | "avatar"
+    | "preferences"
+    | "map"
+    | "activities"
+    | "locations"
+    | "done"
   >("start");
+  const [finalMapsUrl, setFinalMapsUrl] = useState<string | null>(null);
+
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [activeLocation, setActiveLocation] = useState<Location | null>(null);
+  const START_POINTS: Record<
+    StartingPoint,
+    { name: string; place_id?: string; lat?: number; lng?: number }
+  > = {
+    "Naha Airport": {
+      name: "Naha Airport",
+      place_id: "ChIJjSyLjsRp5TQRkP5WN6rOTFA",
+      lat: 26.2088,
+      lng: 127.6792,
+    },
+    "Tomari Port": {
+      name: "Tomari Port",
+      place_id: "ChIJEzfBA39p5TQRP-w2OxmUkPk",
+      lat: 26.218,
+      lng: 127.688,
+    },
+    Chatan: {
+      name: "Chatan",
+      place_id: "ChIJzZoVCAUT5TQRzIueHYt83hs",
+      lat: 26.3233,
+      lng: 127.7653,
+    },
+    Nago: {
+      name: "Nago",
+      place_id: "ChIJ-e0h22j_5DQRum8XD8hJ6X8",
+      lat: 26.5016,
+      lng: 127.9457,
+    },
+  };
+
+  async function createTextPdfAndPrint(selected: Location[]) {
+    // простой текстовый PDF (без картинок) и открытие в окне печати
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    let y = 20;
+    pdf.setFontSize(18);
+    pdf.text("TravelQuest Route", pageWidth / 2, y, { align: "center" });
+    y += 12;
+    pdf.setFontSize(11);
+    pdf.text(`Generated: ${new Date().toLocaleString()}`, 14, y);
+    y += 10;
+
+    if (!selected || selected.length === 0) {
+      pdf.text("No locations selected", 14, y);
+    } else {
+      selected.forEach((loc, i) => {
+        y += 8;
+        pdf.setFontSize(12);
+        pdf.text(`${i + 1}. ${loc.name}`, 14, y);
+        y += 6;
+        pdf.setFontSize(10);
+        // split text to lines if long
+        const lines = pdf.splitTextToSize(loc.desc || "", pageWidth - 28);
+        pdf.text(lines, 14, y);
+        y += lines.length * 6;
+        // переход на новую страницу при необходимости
+        if (y > pdf.internal.pageSize.getHeight() - 30) {
+          pdf.addPage();
+          y = 20;
+        }
+      });
+    }
+
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    const w = window.open("");
+    if (!w) {
+      // fallback: скачиваем
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "route.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    // вставляем iframe и вызываем печать по загрузке
+    w.document.write(
+      `<iframe src="${url}" style="width:100%;height:100vh;border:none"></iframe>`
+    );
+    const tryPrint = () => {
+      const iframe = w.document.querySelector("iframe");
+      if (!iframe) return setTimeout(tryPrint, 200);
+      iframe.onload = () => {
+        try {
+          w.focus();
+          w.print();
+        } catch (e) {
+          console.error(e);
+        }
+      };
+    };
+    tryPrint();
+  }
 
   const categoryIcons: Record<string, string> = {
     Beach: "/icons/beach.svg",
@@ -160,6 +268,122 @@ export default function HomePage() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const [popupImgSrc, setPopupImgSrc] = useState<string>("/placeholder.jpg");
+
+  function buildGoogleMapsUrlMultipleWaypointsFixed(
+    selected: Location[],
+    startingPoint?: string | Location
+  ): string | null {
+    if (!selected || selected.length === 0) return null;
+
+    // helper: value for URL param (place_id OR coords OR encoded name)
+    const formatValue = (item: string | Location) => {
+      if (typeof item === "string") return encodeURIComponent(item);
+      if (item.place_id) return item.place_id;
+      if (typeof item.lat === "number" && typeof item.lng === "number")
+        return `${item.lat},${item.lng}`;
+      return encodeURIComponent(item.name || "");
+    };
+
+    // Если есть внешняя стартовая точка (startingPoint задан) — используем её как origin.
+    // Тогда waypoints должны быть ВСЕ выбранные локации кроме последней (destination):
+    //   rawWaypoints = selected.slice(0, -1)
+    // Если startingPoint НЕ задан — предполагаем, что первая selected[0] — origin,
+    // и waypoints = selected.slice(1, -1).
+    const originProvided =
+      typeof startingPoint !== "undefined" && startingPoint !== null;
+    const originItem: string | Location = originProvided
+      ? (startingPoint as any)
+      : selected[0];
+    const originParam = formatValue(originItem);
+    const originPlaceId =
+      typeof originItem === "object"
+        ? (originItem as Location).place_id
+        : undefined;
+
+    const destinationItem = selected[selected.length - 1];
+    const destinationParam = formatValue(destinationItem);
+    const destinationPlaceId = destinationItem.place_id;
+
+    const rawWaypoints = originProvided
+      ? selected.length > 1
+        ? selected.slice(0, -1)
+        : []
+      : selected.length > 2
+      ? selected.slice(1, -1)
+      : [];
+
+    const waypointsParams = rawWaypoints.map((w) => formatValue(w));
+    const waypointsParam = waypointsParams.length
+      ? waypointsParams.join("|")
+      : "";
+
+    const waypointPlaceIdsArr = rawWaypoints
+      .map((w) => w.place_id)
+      .filter((id): id is string => Boolean(id));
+
+    // --- Отладочные логи: обязательно посмотри их в консоли ---
+    console.log(">>> buildGoogleMapsUrlMultipleWaypointsFixed");
+    console.log("selected.length =", selected.length);
+    console.log(
+      "startingPoint provided? ->",
+      originProvided ? originItem : "(no)"
+    );
+    console.table(
+      selected.map((s, i) => ({
+        idx: i,
+        name: s.name,
+        place_id: s.place_id ?? "(no)",
+        lat: s.lat ?? "(no)",
+        lng: s.lng ?? "(no)",
+      }))
+    );
+    console.log(
+      "rawWaypoints (count):",
+      rawWaypoints.length,
+      rawWaypoints.map((w) => w.name)
+    );
+    console.log("waypointsParams:", waypointsParams);
+    console.log("waypointPlaceIdsArr:", waypointPlaceIdsArr);
+    // ------------------------------------------------------------
+
+    const params: string[] = [];
+    params.push("api=1");
+    params.push(`origin=${originParam}`);
+    if (originPlaceId) params.push(`origin_place_id=${originPlaceId}`);
+    if (waypointsParam) params.push(`waypoints=${waypointsParam}`);
+    if (waypointPlaceIdsArr.length)
+      params.push(`waypoint_place_ids=${waypointPlaceIdsArr.join("|")}`);
+    params.push(`destination=${destinationParam}`);
+    if (destinationPlaceId)
+      params.push(`destination_place_id=${destinationPlaceId}`);
+    params.push("travelmode=driving");
+
+    const url = `https://www.google.com/maps/dir/?${params.join("&")}`;
+    console.log("final url:", url);
+    return url;
+  }
+
+  // Обработчик завершения маршрута
+  function handleFinish(): void {
+    if (!selectedLocations || selectedLocations.length === 0) {
+      alert("Please select at least one location!");
+      return;
+    }
+
+    setIsExpanded(false);
+    setExpandedRegion(null);
+
+    const url = buildGoogleMapsUrlMultipleWaypointsFixed(
+      selectedLocations,
+      START_POINTS[startingPoint] ?? startingPoint
+    );
+    setFinalMapsUrl(url);
+    setStep("done");
+
+    console.log("DEBUG maps url (on finish):", url);
+    setFinalMapsUrl(url);
+    setStep("done");
+  }
 
   // обновляем источник картинки, когда меняется регион или индекс
   useEffect(() => {
@@ -461,6 +685,20 @@ export default function HomePage() {
                         ))}
                       </div>
                     </div>
+                    {/* DEPARTURE TIME */}
+                    <div className="mb-6">
+                      <label className="block font-semibold text-ml text-[#3e2723] mb-2">
+                        Time of departure
+                      </label>
+
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="border border-[#d6ccc2] bg-white rounded-md px-2 py-2 text-sm w-full 
+               focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                      />
+                    </div>
                   </div>
 
                   {/* Кнопки */}
@@ -474,9 +712,9 @@ export default function HomePage() {
 
                     <button
                       onClick={() => setStep("map")}
-                      disabled={!startingPoint || !transport}
+                      disabled={!startingPoint || !transport || !startTime}
                       className={`font-bold py-3 px-5 rounded-md transition ${
-                        !startingPoint || !transport
+                        !startingPoint || !transport || !startTime
                           ? "bg-[#F39897] text-white cursor-not-allowed"
                           : "bg-[#e74c3c] text-white cursor-pointer hover:bg-[#d84333]"
                       }`}
@@ -1071,14 +1309,6 @@ export default function HomePage() {
                       <span className="font-semibold">Starting point:</span>{" "}
                       {startingPoint || "Not selected"}
                     </p>
-                    {/* <p className="text-[#3e2723] text-sm mb-2">
-                      <span className="font-semibold">Region:</span>{" "}
-                      {selectedRegion || "Not selected"}
-                    </p> */}
-                    {/* <p className="text-[#3e2723] text-sm mb-2">
-                      <span className="font-semibold">Activity:</span>{" "}
-                      {interests[0] || "No activity selected"}
-                    </p> */}
                     <p className="text-[#3e2723] text-sm mb-2 font-semibold">
                       Selected locations:
                     </p>
@@ -1088,7 +1318,9 @@ export default function HomePage() {
                           key={loc.name}
                           className="flex justify-between items-center text-sm text-[#3e2723] mb-1"
                         >
-                          <span>• {loc.name}</span>
+                          <span>
+                            • {loc.name} — {loc.visitTime} min
+                          </span>
 
                           <button
                             onClick={() => {
@@ -1120,13 +1352,7 @@ export default function HomePage() {
                     </button>
 
                     <button
-                      onClick={() => {
-                        if (selectedLocations.length === 0) {
-                          alert("Please select at least one location!");
-                          return;
-                        }
-                        alert("Next step coming soon!");
-                      }}
+                      onClick={handleFinish}
                       className={`font-bold py-3 px-5 rounded-md transition ${
                         selectedLocations.length === 0
                           ? "bg-[#F39897] text-white cursor-not-allowed"
@@ -1139,6 +1365,74 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* STEP 7: FINAL */}
+          {step === "done" && (
+            <div className="flex flex-col items-center justify-center h-full w-full text-center p-6">
+              <Image
+                src="/startinglogo.svg"
+                alt="Okinawa illustration"
+                width={150}
+                height={150}
+                className="mb-6"
+              />
+
+              <h1 className="text-4xl font-bold text-[#3e2723] mb-2">
+                Congratulations!
+              </h1>
+              <p className="text-xl text-[#3e2723] mb-8">
+                Your route is ready 🎉
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => createTextPdfAndPrint(selectedLocations)}
+                  className="bg-[#3e2723] text-white font-bold py-3 px-6 rounded-md hover:opacity-90 transition"
+                >
+                  Export route to PDF
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!selectedLocations || selectedLocations.length === 0) {
+                      alert("No locations selected");
+                      return;
+                    }
+
+                    // если у тебя есть START_POINTS и ты хочешь использовать объект из него:
+                    const startArg =
+                      typeof startingPoint === "string" &&
+                      (START_POINTS as any)?.[startingPoint as any]
+                        ? (START_POINTS as any)[startingPoint as any]
+                        : startingPoint || undefined;
+
+                    const url =
+                      finalMapsUrl ??
+                      buildGoogleMapsUrlMultipleWaypointsFixed(
+                        selectedLocations,
+                        startArg as any
+                      );
+                    console.log("Open button url:", url);
+                    if (!url) {
+                      alert("Failed to build Google Maps URL");
+                      return;
+                    }
+                    window.open(url, "_blank");
+                  }}
+                  className="bg-[#e74c3c] text-white font-bold py-3 px-6 rounded-md hover:bg-[#d84333] transition"
+                >
+                  Open route in Google Maps
+                </button>
+              </div>
+
+              <button
+                onClick={() => setStep("start")}
+                className="mt-6 text-sm text-[#3e2723]/80 underline"
+              >
+                Back to start
+              </button>
             </div>
           )}
         </div>

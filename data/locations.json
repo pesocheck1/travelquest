@@ -87,12 +87,40 @@
   ],
   "South Okinawa": [
     {
-      "name": "Churaumi Aquarium",
-      "desc": "Famous aquarium",
+      "name": "Fukumura",
+      "desc": "Best food",
+      "image": "/locations/aquarium.png",
+      "category": "Food",
+      "left": "9%",
+      "top": "20%",
+      "lat": 26.2108411,
+      "lng": 127.6708869,
+      "place_id": "ChIJuTvF9Jhp5TQRRg58OVVVbJE",
+      "visitTime": 60
+    },
+    {
+      "name": "Okinawa Harbourview Hotel",
+      "desc": "Hotel",
+      "image": "/locations/aquarium.png",
+      "category": "Hotel",
+      "left": "17%",
+      "top": "25%",
+      "lat": 26.2088542,
+      "lng": 127.6717973,
+      "place_id": "ChIJhUMxkgwS5TQRRw0y5Ju6T-I",
+      "visitTime": 720
+    },
+    {
+      "name": "Okinawa World",
+      "desc": "Biggest Cave",
       "image": "/locations/aquarium.png",
       "category": "Culture",
-      "left": "12%",
-      "top": "20%"
+      "left": "25%",
+      "top": "33%",
+      "lat": 26.173764,
+      "lng": 127.7094439,
+      "place_id": "ChIJza_GaWlv5TQRy52qkW4L2P4",
+      "visitTime": 120
     }
   ]
 }
