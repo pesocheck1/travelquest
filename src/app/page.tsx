@@ -20,6 +20,8 @@ type Location = {
   endTime?: string;
   travelMins?: number;
   distanceKm?: number;
+  globalLeft?: string | number;
+  globalTop?: string | number;
 };
 
 type LocationsData = {
@@ -1570,8 +1572,14 @@ export default function HomePage() {
                                         },
                                       ]);
                                       setAvatarMapPos({
-                                        left: activeLocation.left ?? "50%", // fallback
-                                        top: activeLocation.top ?? "50%",
+                                        left:
+                                          activeLocation.globalLeft ||
+                                          activeLocation.left ||
+                                          "50%",
+                                        top:
+                                          activeLocation.globalTop ||
+                                          activeLocation.top ||
+                                          "50%",
                                       });
                                     }
                                     setActiveLocation(null);
