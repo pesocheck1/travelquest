@@ -16,6 +16,10 @@ type Location = {
   lat?: number;
   lng?: number;
   visitTime?: number;
+  arrivalTime?: string;
+  endTime?: string;
+  travelMins?: number;
+  distanceKm?: number;
 };
 
 type LocationsData = {
@@ -30,6 +34,12 @@ type StartingPoint = "Naha Airport" | "Tomari Port" | "Chatan" | "Nago";
 type TravelTimeData = {
   car: number;
   public: number;
+};
+
+const modifiedAvatarMap: Record<string, string> = {
+  "/avatar1.svg": "/avatar11.svg",
+  "/avatar2.svg": "/avatar22.svg",
+  "/avatar3.svg": "/avatar33.svg",
 };
 
 const travelTimes: Record<StartingPoint, Record<RegionName, TravelTimeData>> = {
@@ -84,7 +94,11 @@ const locationsData: LocationsData = locationsDataJson;
 export default function HomePage() {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
-  // в верхней части компонента (рядом с useState)
+  const [avatarMapPos, setAvatarMapPos] = useState<{
+    left: string;
+    top: string;
+  } | null>(null);
+
   const handleBackToAvatar = () => {
     setStep("avatar");
     // сбрасываем данные шага preferences
@@ -110,10 +124,10 @@ export default function HomePage() {
   const handleBackToActivities = () => {
     setStep("activities");
     // сбрасываем выбор локаций и активную карточку
-    setSelectedLocations([]);
-    setActiveLocation(null);
-    setIsExpanded(false);
-    setExpandedRegion(null);
+    // setSelectedLocations([]);
+    // setActiveLocation(null);
+    // setIsExpanded(false);
+    // setExpandedRegion(null);
   };
 
   const [startingPoint, setStartingPoint] = useState("");
@@ -135,6 +149,7 @@ export default function HomePage() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [activeLocation, setActiveLocation] = useState<Location | null>(null);
+
   const START_POINTS: Record<
     StartingPoint,
     { name: string; place_id?: string; lat?: number; lng?: number }
@@ -164,6 +179,64 @@ export default function HomePage() {
       lng: 127.9457,
     },
   };
+
+  function haversineDistance(
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number
+  ) {
+    const R = 6371; // км
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) ** 2;
+
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function getSpeed(transport: Transport) {
+    return transport === "car" ? 25 : 15; // км/ч
+  }
+
+  function addMinutesToTime(time: string, mins: number) {
+    const [h, m] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(h, m + mins, 0);
+    return date.toTimeString().slice(0, 5);
+  }
+  function recalculateSchedule(locations: Location[]) {
+    let prevLat = START_POINTS[startingPoint].lat!;
+    let prevLng = START_POINTS[startingPoint].lng!;
+    let prevTime = startTime;
+
+    return locations.map((loc) => {
+      const dist = haversineDistance(prevLat, prevLng, loc.lat, loc.lng);
+      const travelMins = Math.max(
+        1,
+        Math.round((dist / getSpeed(transport)) * 60)
+      );
+
+      const arrivalTime = addMinutesToTime(prevTime, travelMins);
+      const endTime = addMinutesToTime(arrivalTime, loc.visitTime);
+
+      prevLat = loc.lat;
+      prevLng = loc.lng;
+      prevTime = endTime;
+
+      return {
+        ...loc,
+        arrivalTime,
+        endTime,
+        travelMins,
+        distanceKm: Number(dist.toFixed(1)),
+      };
+    });
+  }
 
   async function createTextPdfAndPrint(selected: Location[]) {
     // простой текстовый PDF (без картинок) и открытие в окне печати
@@ -269,6 +342,8 @@ export default function HomePage() {
 
   const [popupImgSrc, setPopupImgSrc] = useState<string>("/placeholder.jpg");
 
+  const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
+
   function buildGoogleMapsUrlMultipleWaypointsFixed(
     selected: Location[],
     startingPoint?: string | Location
@@ -284,11 +359,6 @@ export default function HomePage() {
       return encodeURIComponent(item.name || "");
     };
 
-    // Если есть внешняя стартовая точка (startingPoint задан) — используем её как origin.
-    // Тогда waypoints должны быть ВСЕ выбранные локации кроме последней (destination):
-    //   rawWaypoints = selected.slice(0, -1)
-    // Если startingPoint НЕ задан — предполагаем, что первая selected[0] — origin,
-    // и waypoints = selected.slice(1, -1).
     const originProvided =
       typeof startingPoint !== "undefined" && startingPoint !== null;
     const originItem: string | Location = originProvided
@@ -398,6 +468,14 @@ export default function HomePage() {
       setExpandedRegion(null);
     }
   }, [step]);
+  useEffect(() => {
+    if (!startTime) {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, "0");
+      const m = now.getMinutes().toString().padStart(2, "0");
+      setStartTime(`${h}:${m}`);
+    }
+  }, [startTime, setStartTime]);
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center">
@@ -752,30 +830,32 @@ export default function HomePage() {
                     />
 
                     {/* Avatar */}
-                    {avatar && startingPoint && (
+                    {avatar && (avatarMapPos || startingPoint) && (
                       <div
                         className="absolute transition-all duration-500"
                         style={{
-                          top:
-                            startingPoint === "Naha Airport"
-                              ? "80%"
-                              : startingPoint === "Tomari Port"
-                              ? "75%"
-                              : startingPoint === "Chatan"
-                              ? "65%"
-                              : startingPoint === "Nago"
-                              ? "38%"
-                              : "35%",
-                          left:
-                            startingPoint === "Naha Airport"
-                              ? "22%"
-                              : startingPoint === "Tomari Port"
-                              ? "22%"
-                              : startingPoint === "Chatan"
-                              ? "29%"
-                              : startingPoint === "Nago"
-                              ? "52%"
-                              : "50%",
+                          top: avatarMapPos
+                            ? avatarMapPos.top
+                            : startingPoint === "Naha Airport"
+                            ? "80%"
+                            : startingPoint === "Tomari Port"
+                            ? "75%"
+                            : startingPoint === "Chatan"
+                            ? "65%"
+                            : startingPoint === "Nago"
+                            ? "38%"
+                            : "35%",
+                          left: avatarMapPos
+                            ? avatarMapPos.left
+                            : startingPoint === "Naha Airport"
+                            ? "22%"
+                            : startingPoint === "Tomari Port"
+                            ? "22%"
+                            : startingPoint === "Chatan"
+                            ? "29%"
+                            : startingPoint === "Nago"
+                            ? "52%"
+                            : "50%",
                           transform: "translate(-50%, -50%)",
                         }}
                       >
@@ -785,6 +865,9 @@ export default function HomePage() {
                           width={50}
                           height={50}
                           className="rounded-full"
+                          style={{
+                            filter: "drop-shadow(0 0 12px rgba(89, 89, 89, 1))",
+                          }}
                         />
                       </div>
                     )}
@@ -899,7 +982,7 @@ export default function HomePage() {
                               }}
                             />
 
-                            {/* Собственно карточка — клики внутри не закрывают */}
+                            {/* Карточка */}
                             <div
                               className="absolute bg-white rounded-lg shadow-2xl p-4 w-[300px] max-w-[90%] transition-all duration-300 z-50"
                               style={{
@@ -912,14 +995,12 @@ export default function HomePage() {
                               <div className="relative w-full h-[160px] overflow-hidden rounded-md mb-2">
                                 <div className="relative w-full h-full">
                                   <Image
-                                    // key принудительно перерендерит <Image> при смене popupImgSrc
                                     key={popupImgSrc}
                                     src={popupImgSrc}
                                     alt={region.name}
                                     fill
                                     className="object-cover"
                                     onError={() => {
-                                      // если загрузка провалилась — подставляем placeholder
                                       if (popupImgSrc !== "/placeholder.jpg") {
                                         setPopupImgSrc("/placeholder.jpg");
                                       }
@@ -927,7 +1008,7 @@ export default function HomePage() {
                                   />
                                 </div>
 
-                                {/* Навигация — показываем только если есть >1 изображений */}
+                                {/* Навигация */}
                                 {(expandedRegion?.images?.length ?? 0) > 1 && (
                                   <>
                                     <button
@@ -976,41 +1057,109 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Right panel */}
+                {/* Правая панель step 4 */}
                 <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col justify-between overflow-y-auto">
                   <div>
                     <h2 className="text-xl font-bold mb-3 text-[#3e2723]">
                       Your route
                     </h2>
-                    <p className="text-[#3e2723] text-sm mb-4">
-                      <span className="font-semibold">Starting point:</span>{" "}
-                      {startingPoint || "Not selected"}
+                    <p className="text-[#3e2723] text-sm mb-1">
+                      <span className="font-semibold">Departure:</span>{" "}
+                      {startingPoint && startTime
+                        ? `${startingPoint} — ${startTime}`
+                        : "Not selected"}
                     </p>
-                    {/* <p className="text-[#3e2723] text-sm">
-                      <span className="font-semibold">Region:</span>{" "}
-                      {selectedRegion || "Not selected"}
-                    </p> */}
+
+                    {selectedLocations.length === 0 && (
+                      <p className="text-xs text-[#6d4c41] italic">
+                        No locations selected
+                      </p>
+                    )}
+
+                    {selectedLocations.length > 0 &&
+                      selectedLocations[0].travelMins !== undefined &&
+                      selectedLocations[0].distanceKm !== undefined && (
+                        <div className="italic text-xs text-[#6d4c41] mb-2 pl-1">
+                          ⤷ {selectedLocations[0].travelMins} min ·{" "}
+                          {selectedLocations[0].distanceKm.toFixed(1)} km
+                        </div>
+                      )}
+
+                    {selectedLocations.map((loc, index) => (
+                      <div key={loc.name} className="mb-3">
+                        <div className="flex justify-between items-center text-sm text-[#3e2723]">
+                          <span>
+                            {loc.name} —{" "}
+                            <span className="text-xs text-[#6d4c41]">
+                              {loc.arrivalTime && loc.endTime
+                                ? `${loc.arrivalTime}–${loc.endTime}`
+                                : ""}
+                            </span>
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              const updated = selectedLocations.filter(
+                                (_, i) => i !== index
+                              );
+                              // если у тебя есть recalculateSchedule — используй её, иначе просто поставь updated
+                              if (
+                                typeof (recalculateSchedule as any) ===
+                                "function"
+                              ) {
+                                setSelectedLocations(
+                                  recalculateSchedule(updated)
+                                );
+                              } else {
+                                setSelectedLocations(updated);
+                              }
+                            }}
+                            className="text-[#e74c3c] font-bold ml-2 hover:text-[#c0392b] transition cursor-pointer"
+                            aria-label={`Remove ${loc.name}`}
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {index < selectedLocations.length - 1 &&
+                          selectedLocations[index + 1].travelMins !==
+                            undefined &&
+                          selectedLocations[index + 1].distanceKm !==
+                            undefined && (
+                            <div className="italic text-xs text-[#6d4c41] mt-1 pl-1">
+                              ⤷ {selectedLocations[index + 1].travelMins} min ·{" "}
+                              {selectedLocations[index + 1].distanceKm!.toFixed(
+                                1
+                              )}{" "}
+                              km
+                            </div>
+                          )}
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex justify-center gap-3 mt-4">
-                    <button
-                      onClick={handleBackToPreferences}
-                      className="bg-[#d7ccc8] text-[#3e2723] font-bold py-3 px-6 rounded-md hover:bg-[#c0b3af] transition cursor-pointer"
-                    >
-                      BACK
-                    </button>
+                  {/* Кнопки: большая кнопка отсутствует на этом шаге (по твоим прошлым пожеланиям) */}
+                  <div className="mt-4">
+                    <div className="flex justify-between gap-3">
+                      <button
+                        onClick={handleBackToPreferences}
+                        className="flex-1 bg-[#d7ccc8] text-[#3e2723] font-bold py-3 rounded-md hover:bg-[#c0b3af] transition"
+                      >
+                        BACK
+                      </button>
 
-                    <button
-                      onClick={() => selectedRegion && setStep("activities")}
-                      disabled={!selectedRegion}
-                      className={`font-bold py-3 px-5 rounded-md transition ${
-                        !selectedRegion
-                          ? "bg-[#F39897] text-white cursor-not-allowed"
-                          : "bg-[#e74c3c] text-white cursor-pointer hover:bg-[#d84333]"
-                      }`}
-                    >
-                      NEXT
-                    </button>
+                      <button
+                        onClick={() => selectedRegion && setStep("activities")}
+                        disabled={!selectedRegion}
+                        className={`flex-1 font-bold py-3 rounded-md transition ${
+                          !selectedRegion
+                            ? "bg-[#F39897] text-white cursor-not-allowed"
+                            : "bg-[#e74c3c] text-white hover:bg-[#d84333]"
+                        }`}
+                      >
+                        NEXT
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1100,64 +1249,126 @@ export default function HomePage() {
                     {avatar && (
                       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                         <Image
-                          src={avatar}
+                          src={modifiedAvatarMap[avatar] ?? avatar}
                           alt="avatar"
-                          width={80}
-                          height={80}
-                          className="rounded-full"
+                          width={90}
+                          height={90}
+                          style={{
+                            filter: "drop-shadow(0 0 12px rgba(89, 89, 89, 1))",
+                          }}
                         />
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Правая панель */}
+                {/* Правая панель step 5 */}
                 <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col justify-between overflow-y-auto">
                   <div>
                     <h2 className="text-xl font-bold mb-3 text-[#3e2723]">
                       Your route
                     </h2>
-                    <p className="text-[#3e2723] text-sm mb-2">
-                      <span className="font-semibold">Starting point:</span>{" "}
-                      {startingPoint || "Not selected"}
+                    <p className="text-[#3e2723] text-sm mb-1">
+                      <span className="font-semibold">Departure:</span>{" "}
+                      {startingPoint && startTime
+                        ? `${startingPoint} — ${startTime}`
+                        : "Not selected"}
                     </p>
-                    {/* <p className="text-[#3e2723] text-sm mb-2">
-                      <span className="font-semibold">Region:</span>{" "}
-                      {selectedRegion || "Not selected"}
-                    </p> */}
-                    {/* <p className="text-[#3e2723] text-sm">
-                      <span className="font-semibold">Activities:</span>{" "}
-                      {interests.length > 0
-                        ? interests[0]
-                        : "No activity selected"}
-                    </p> */}
+
+                    {selectedLocations.length === 0 && (
+                      <p className="text-xs text-[#6d4c41] italic">
+                        No locations selected
+                      </p>
+                    )}
+
+                    {selectedLocations.length > 0 &&
+                      selectedLocations[0].travelMins !== undefined &&
+                      selectedLocations[0].distanceKm !== undefined && (
+                        <div className="italic text-xs text-[#6d4c41] mb-2 pl-1">
+                          ⤷ {selectedLocations[0].travelMins} min ·{" "}
+                          {selectedLocations[0].distanceKm.toFixed(1)} km
+                        </div>
+                      )}
+
+                    {selectedLocations.map((loc, index) => (
+                      <div key={loc.name} className="mb-3">
+                        <div className="flex justify-between items-center text-sm text-[#3e2723]">
+                          <span>
+                            {loc.name} —{" "}
+                            <span className="text-xs text-[#6d4c41]">
+                              {loc.arrivalTime && loc.endTime
+                                ? `${loc.arrivalTime}–${loc.endTime}`
+                                : ""}
+                            </span>
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              const updated = selectedLocations.filter(
+                                (_, i) => i !== index
+                              );
+                              if (
+                                typeof (recalculateSchedule as any) ===
+                                "function"
+                              ) {
+                                setSelectedLocations(
+                                  recalculateSchedule(updated)
+                                );
+                              } else {
+                                setSelectedLocations(updated);
+                              }
+                            }}
+                            className="text-[#e74c3c] font-bold ml-2 hover:text-[#c0392b] transition cursor-pointer"
+                            aria-label={`Remove ${loc.name}`}
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {index < selectedLocations.length - 1 &&
+                          selectedLocations[index + 1].travelMins !==
+                            undefined &&
+                          selectedLocations[index + 1].distanceKm !==
+                            undefined && (
+                            <div className="italic text-xs text-[#6d4c41] mt-1 pl-1">
+                              ⤷ {selectedLocations[index + 1].travelMins} min ·{" "}
+                              {selectedLocations[index + 1].distanceKm!.toFixed(
+                                1
+                              )}{" "}
+                              km
+                            </div>
+                          )}
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex justify-center gap-3 mt-4">
-                    <button
-                      onClick={handleBackToMap}
-                      className="bg-[#d7ccc8] text-[#3e2723] font-bold py-3 px-6 rounded-md hover:bg-[#c0b3af] transition cursor-pointer"
-                    >
-                      BACK
-                    </button>
+                  <div className="mt-4">
+                    <div className="flex justify-between gap-3">
+                      <button
+                        onClick={handleBackToMap}
+                        className="flex-1 bg-[#d7ccc8] text-[#3e2723] font-bold py-3 rounded-md hover:bg-[#c0b3af] transition"
+                      >
+                        BACK
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        if (interests.length === 0) {
-                          alert("Please select an activity!");
-                          return;
-                        }
-                        setStep("locations"); // ← вот здесь переход к следующему шагу
-                      }}
-                      className={`font-bold py-3 px-5 rounded-md transition ${
-                        interests.length === 0
-                          ? "bg-[#F39897] text-white cursor-not-allowed"
-                          : "bg-[#e74c3c] text-white cursor-pointer hover:bg-[#d84333]"
-                      }`}
-                      disabled={interests.length === 0}
-                    >
-                      NEXT
-                    </button>
+                      <button
+                        onClick={() => {
+                          if (interests.length === 0) {
+                            alert("Please select an activity!");
+                            return;
+                          }
+                          setStep("locations");
+                        }}
+                        disabled={interests.length === 0}
+                        className={`flex-1 font-bold py-3 rounded-md transition ${
+                          interests.length === 0
+                            ? "bg-[#F39897] text-white cursor-not-allowed"
+                            : "bg-[#e74c3c] text-white hover:bg-[#d84333]"
+                        }`}
+                      >
+                        NEXT
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1175,9 +1386,29 @@ export default function HomePage() {
                 {/* Левая часть — карта */}
                 <div
                   className="flex-1 relative flex items-center justify-center overflow-hidden p-2"
-                  onClick={() => setActiveLocation(null)} // клик по пустому месту закрывает карточку
+                  onClick={() => setActiveLocation(null)}
                 >
                   <div className="relative w-full h-full ">
+                    {avatar && (
+                      <div
+                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          left: "83%",
+                          top: "85%",
+                        }}
+                      >
+                        <Image
+                          src={modifiedAvatarMap[avatar] ?? avatar}
+                          alt="avatar"
+                          width={75}
+                          height={75}
+                          style={{
+                            filter: "drop-shadow(0 0 12px rgba(89, 89, 89, 1))",
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <Image
                       src={`/maps/${selectedRegion}.svg`}
                       alt={`${selectedRegion} map`}
@@ -1195,24 +1426,21 @@ export default function HomePage() {
                         const leftPercent = parseFloat(loc.left); // "12.5%" -> 12.5
                         const topPercent = parseFloat(loc.top);
 
-                        const H_THRESHOLD = 65; // если точка правее 75% — показываем карточку вправо/слева меняем на right
-                        const V_THRESHOLD = 59; // если точка ниже 75% — показываем карточку выше (используем bottom)
+                        const H_THRESHOLD = 65;
+                        const V_THRESHOLD = 59;
 
-                        // Подготовим стиль карточки: используем либо left/top, либо right/bottom
                         const cardStyle: React.CSSProperties = {
                           position: "absolute",
                           zIndex: 20,
-                          width: "260px", // соответствует классу w-[260px]
+                          width: "260px",
                         };
 
-                        // Если точка правее порога — ставим карточку "слева" от точки (через right)
                         if (leftPercent > H_THRESHOLD) {
-                          cardStyle.right = `calc(${100 - leftPercent}% + 6px)`; // +12px отступ от точки
+                          cardStyle.right = `calc(${100 - leftPercent}% + 6px)`;
                         } else {
-                          cardStyle.left = `calc(${loc.left} + 6px)`; // смещение вправо от точки
+                          cardStyle.left = `calc(${loc.left} + 6px)`;
                         }
 
-                        // Если точка ниже порога — ставим карточку над точкой (через bottom)
                         if (topPercent > V_THRESHOLD) {
                           cardStyle.bottom = `calc(${100 - topPercent}% + 6px)`;
                         } else {
@@ -1221,19 +1449,25 @@ export default function HomePage() {
 
                         return (
                           <div key={loc.name}>
-                            {/* Точка: клики не всплывают, контейнер не будет закрывать карточку */}
                             <div
                               className="absolute cursor-pointer group"
                               style={{
                                 left: loc.left,
                                 top: loc.top,
                                 transform: "translate(-50%, -50%)",
-                                zIndex: isSelected ? 10 : 1,
+                                zIndex:
+                                  hoveredLocation === loc.name
+                                    ? 20
+                                    : isSelected
+                                    ? 10
+                                    : 1,
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setActiveLocation(loc);
                               }}
+                              onMouseEnter={() => setHoveredLocation(loc.name)} // <-- при наведении
+                              onMouseLeave={() => setHoveredLocation(null)} // <-- при уходе
                             >
                               <Image
                                 src={categoryIcons[loc.category]}
@@ -1243,8 +1477,10 @@ export default function HomePage() {
                                 className={
                                   "transition-transform duration-200 " +
                                   (isSelected
-                                    ? "scale-110 drop-shadow-[0_0_12px_rgba(231,76,60,0.8)]"
-                                    : "group-hover:scale-175")
+                                    ? "scale-110 drop-shadow-[0_0_12px_rgba(231,76,60,0.8)]" // выбранная точка — немного увеличена + красная тень
+                                    : hoveredLocation === loc.name
+                                    ? "scale-175" // ховер — увеличиваем без свечения
+                                    : "group-hover:scale-110")
                                 }
                               />
                             </div>
@@ -1280,10 +1516,63 @@ export default function HomePage() {
                                         (l) => l.name === activeLocation.name
                                       )
                                     ) {
+                                      const last =
+                                        selectedLocations[
+                                          selectedLocations.length - 1
+                                        ];
+
+                                      const prevLat = last
+                                        ? last.lat
+                                        : START_POINTS[
+                                            startingPoint as StartingPoint
+                                          ].lat!;
+                                      const prevLng = last
+                                        ? last.lng
+                                        : START_POINTS[
+                                            startingPoint as StartingPoint
+                                          ].lng!;
+
+                                      const dist = haversineDistance(
+                                        prevLat,
+                                        prevLng,
+                                        activeLocation.lat,
+                                        activeLocation.lng
+                                      );
+                                      const travelMins = Math.max(
+                                        1,
+                                        Math.round(
+                                          (dist / getSpeed(transport)) * 60
+                                        )
+                                      );
+
+                                      const departureTime =
+                                        selectedLocations.length === 0
+                                          ? startTime
+                                          : last.endTime!;
+
+                                      const arrivalTime = addMinutesToTime(
+                                        departureTime,
+                                        travelMins
+                                      );
+                                      const endTime = addMinutesToTime(
+                                        arrivalTime,
+                                        activeLocation.visitTime
+                                      );
+
                                       setSelectedLocations([
                                         ...selectedLocations,
-                                        activeLocation,
+                                        {
+                                          ...activeLocation,
+                                          arrivalTime,
+                                          endTime,
+                                          travelMins,
+                                          distanceKm: Number(dist.toFixed(1)),
+                                        },
                                       ]);
+                                      setAvatarMapPos({
+                                        left: activeLocation.left ?? "50%", // fallback
+                                        top: activeLocation.top ?? "50%",
+                                      });
                                     }
                                     setActiveLocation(null);
                                   }}
@@ -1299,69 +1588,126 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Правая панель */}
-                <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col justify-between overflow-y-auto">
-                  <div>
+                {/* Правая панель step 6 */}
+                <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col h-full">
+                  <div className="mb-1">
                     <h2 className="text-xl font-bold mb-3 text-[#3e2723]">
                       Your route
                     </h2>
-                    <p className="text-[#3e2723] text-sm mb-2">
-                      <span className="font-semibold">Starting point:</span>{" "}
-                      {startingPoint || "Not selected"}
+                    <p className="text-[#3e2723] text-sm mb-0">
+                      <span className="font-semibold">Departure:</span>{" "}
+                      {startingPoint && startTime
+                        ? `${startingPoint} — ${startTime}`
+                        : "Not selected"}
                     </p>
-                    <p className="text-[#3e2723] text-sm mb-2 font-semibold">
-                      Selected locations:
-                    </p>
-                    {selectedLocations.length > 0 ? (
-                      selectedLocations.map((loc) => (
-                        <div
-                          key={loc.name}
-                          className="flex justify-between items-center text-sm text-[#3e2723] mb-1"
-                        >
+                  </div>
+
+                  {/* Список локаций */}
+                  <div className="flex-1 overflow-y-auto">
+                    {selectedLocations.length === 0 && (
+                      <p className="text-xs text-[#6d4c41] italic">
+                        No locations selected
+                      </p>
+                    )}
+
+                    {selectedLocations.length > 0 &&
+                      selectedLocations[0].travelMins !== undefined &&
+                      selectedLocations[0].distanceKm !== undefined && (
+                        <div className="italic text-xs text-[#6d4c41] mb-2 pl-1">
+                          ⤷ {selectedLocations[0].travelMins} min ·{" "}
+                          {selectedLocations[0].distanceKm.toFixed(1)} km
+                        </div>
+                      )}
+
+                    {selectedLocations.map((loc, index) => (
+                      <div key={loc.name} className="mb-3">
+                        <div className="flex justify-between items-center text-sm text-[#3e2723]">
                           <span>
-                            • {loc.name} — {loc.visitTime} min
+                            {loc.name} —{" "}
+                            <span className="text-xs text-[#6d4c41]">
+                              {loc.arrivalTime && loc.endTime
+                                ? `${loc.arrivalTime}–${loc.endTime}`
+                                : ""}
+                            </span>
                           </span>
 
                           <button
                             onClick={() => {
-                              setSelectedLocations(
-                                selectedLocations.filter(
-                                  (l) => l.name !== loc.name
-                                )
+                              const updated = selectedLocations.filter(
+                                (_, i) => i !== index
                               );
+                              if (
+                                typeof (recalculateSchedule as any) ===
+                                "function"
+                              ) {
+                                setSelectedLocations(
+                                  recalculateSchedule(updated)
+                                );
+                              } else {
+                                setSelectedLocations(updated);
+                              }
                             }}
                             className="text-[#e74c3c] font-bold ml-2 hover:text-[#c0392b] transition cursor-pointer"
+                            aria-label={`Remove ${loc.name}`}
                           >
                             ✕
                           </button>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-[#3e2723]">
-                        No locations selected
-                      </p>
-                    )}
+
+                        {index < selectedLocations.length - 1 &&
+                          selectedLocations[index + 1].travelMins !==
+                            undefined &&
+                          selectedLocations[index + 1].distanceKm !==
+                            undefined && (
+                            <div className="italic text-xs text-[#6d4c41] mt-1 pl-1">
+                              ⤷ {selectedLocations[index + 1].travelMins} min ·{" "}
+                              {selectedLocations[index + 1].distanceKm!.toFixed(
+                                1
+                              )}{" "}
+                              km
+                            </div>
+                          )}
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex justify-center gap-3 mt-4">
-                    <button
-                      onClick={handleBackToActivities}
-                      className="bg-[#d7ccc8] text-[#3e2723] font-bold py-3 px-6 rounded-md hover:bg-[#c0b3af] transition cursor-pointer"
-                    >
-                      BACK
-                    </button>
+                  {/* Нижний блок с кнопками */}
+                  <div className="mt-4">
+                    <div className="mb-3">
+                      <button
+                        onClick={() => {
+                          setSelectedRegion(null);
+                          setIsExpanded(false);
+                          setExpandedRegion(null);
+                          setStep("map");
+                        }}
+                        className="w-full bg-[#d7ccc8] text-[#3e2723] font-semibold py-3 rounded-md hover:bg-[#c0b3af] transition"
+                      >
+                        Choose another region
+                      </button>
+                    </div>
 
-                    <button
-                      onClick={handleFinish}
-                      className={`font-bold py-3 px-5 rounded-md transition ${
-                        selectedLocations.length === 0
-                          ? "bg-[#F39897] text-white cursor-not-allowed"
-                          : "bg-[#e74c3c] text-white cursor-pointer hover:bg-[#d84333]"
-                      }`}
-                      disabled={selectedLocations.length === 0}
-                    >
-                      NEXT
-                    </button>
+                    {/* Ряд BACK / NEXT */}
+                    <div className="flex justify-between gap-3">
+                      <button
+                        onClick={handleBackToActivities}
+                        className="flex-1 bg-[#d7ccc8] text-[#3e2723] font-bold py-3 rounded-md hover:bg-[#c0b3af] transition"
+                      >
+                        BACK
+                      </button>
+
+                      <button
+                        onClick={handleFinish}
+                        disabled={selectedLocations.length === 0}
+                        className={`flex-1 font-bold py-3 rounded-md transition ${
+                          selectedLocations.length === 0
+                            ? "bg-[#F39897] text-white cursor-not-allowed"
+                            : "bg-[#e74c3c] text-white hover:bg-[#d84333]"
+                        }`}
+                      >
+                        NEXT
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1371,21 +1717,19 @@ export default function HomePage() {
           {/* STEP 7: FINAL */}
           {step === "done" && (
             <div className="flex flex-col items-center justify-center h-full w-full text-center p-6">
-              <Image
-                src="/startinglogo.svg"
-                alt="Okinawa illustration"
-                width={150}
-                height={150}
-                className="mb-6"
-              />
-
               <h1 className="text-4xl font-bold text-[#3e2723] mb-2">
                 Congratulations!
               </h1>
-              <p className="text-xl text-[#3e2723] mb-8">
+              <p className="text-xl text-[#3e2723] mb-4">
                 Your route is ready 🎉
               </p>
-
+              <Image
+                src="/endinglogo.svg"
+                alt="Okinawa illustration"
+                width={150}
+                height={150}
+                className="mb-8"
+              />
               <div className="flex gap-3">
                 <button
                   onClick={() => createTextPdfAndPrint(selectedLocations)}
@@ -1401,7 +1745,6 @@ export default function HomePage() {
                       return;
                     }
 
-                    // если у тебя есть START_POINTS и ты хочешь использовать объект из него:
                     const startArg =
                       typeof startingPoint === "string" &&
                       (START_POINTS as any)?.[startingPoint as any]
@@ -1428,7 +1771,17 @@ export default function HomePage() {
               </div>
 
               <button
-                onClick={() => setStep("start")}
+                onClick={() => {
+                  setName("");
+                  setAvatar(null);
+                  setTransport(null);
+                  setStartingPoint(null);
+                  setSelectedRegion(null);
+                  setStartTime("");
+                  setSelectedLocations([]);
+                  setActiveLocation(null);
+                  setStep("start");
+                }}
                 className="mt-6 text-sm text-[#3e2723]/80 underline"
               >
                 Back to start

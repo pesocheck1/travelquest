@@ -115,10 +115,10 @@
       "desc": "Biggest Cave",
       "image": "/locations/aquarium.png",
       "category": "Culture",
-      "left": "25%",
-      "top": "33%",
-      "lat": 26.173764,
-      "lng": 127.7094439,
+      "left": "19%",
+      "top": "25%",
+      "lat": 26.142956184932192,
+      "lng": 127.74913528697618,
       "place_id": "ChIJza_GaWlv5TQRy52qkW4L2P4",
       "visitTime": 120
     }
