@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Travel Quest Okinawa",
+  title: "TravelQuest Okinawa",
   description: "Gamified route planning across Okinawa",
 };
 
@@ -13,8 +13,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      {/* Tailwind v4 сам подтянет все стили из globals.css */}
-      <body className="min-h-screen bg-white text-gray-800">{children}</body>
+      <head>
+        <link rel="icon" href="/favicon1.ico?v=2" />
+      </head>
+      <body className="min-h-screen bg-white text-gray-800">
+        {children}
+        <footer
+          className="bg-[#e74c3c] text-white py-4 text-center"
+          style={{ fontFamily: '"Glacial Indifference", sans-serif' }}
+        >
+          © {new Date().getFullYear()} TRAVELQUEST OKINAWA
+        </footer>
+      </body>
     </html>
   );
 }
