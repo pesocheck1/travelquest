@@ -13,7 +13,7 @@ export default function Header() {
       <div
         onClick={handleLogoClick}
         className="flex items-center space-x-1 2xl:space-x-0 cursor-pointer hover:opacity-80 transition"
-        style={{ fontFamily: '"Glacial Indifference", sans-serif' }}
+        style={{ fontFamily: '"glacial", sans-serif' }}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === "Enter" && handleLogoClick()}
