@@ -20,7 +20,7 @@ export default function RootLayout({
         {children}
         <footer
           className="bg-[#e74c3c] text-white py-4 text-center"
-          style={{ fontFamily: '"Glacial Indifference", sans-serif' }}
+          style={{ fontFamily: '"glacial", sans-serif' }}
         >
           © {new Date().getFullYear()} TRAVELQUEST OKINAWA
         </footer>
