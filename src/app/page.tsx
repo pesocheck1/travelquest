@@ -202,6 +202,8 @@ export default function HomePage() {
               interests={interests}
               setInterests={setInterests}
               startingPoint={startingPoint as StartingPoint}
+              avatar={avatar}
+              modifiedAvatarMap={modifiedAvatarMap}
               setStartingPoint={setStartingPoint}
               transport={transport as Transport}
               setTransport={setTransport}

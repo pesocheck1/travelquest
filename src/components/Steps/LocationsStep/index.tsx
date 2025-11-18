@@ -43,7 +43,7 @@ type Props = {
   startTime: string;
   setStartTime: (v: string) => void;
 
-  avatar?: string;
+  avatar: string | null;
   modifiedAvatarMap?: Record<string, string>;
   setAvatarMapPos: (pos: {
     left: string | number;
@@ -114,8 +114,8 @@ Props) {
                 <Image
                   src={modifiedAvatarMap?.[avatar] ?? avatar}
                   alt="avatar"
-                  width={90}
-                  height={90}
+                  width={100}
+                  height={100}
                   style={{
                     filter: "drop-shadow(0 0 12px rgba(89, 89, 89, 1))",
                   }}

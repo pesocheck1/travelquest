@@ -132,8 +132,8 @@ export default function ActivitiesStep({
                 <Image
                   src={modifiedAvatarMap[avatar] ?? avatar}
                   alt="avatar"
-                  width={90}
-                  height={90}
+                  width={100}
+                  height={100}
                   style={{
                     filter: "drop-shadow(0 0 12px rgba(89, 89, 89, 1))",
                   }}
