@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../../components/Header";
 
 export default function AboutUsPage() {
@@ -59,51 +59,61 @@ export default function AboutUsPage() {
       setLoading(false);
     }
   };
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => setOffset(window.scrollY * 0.5); // скорость 0.5
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fff8e1] text-[#3e2723]">
       <Header />
 
       {/* HERO */}
-      <section className="relative w-full h-[320px] md:h-[420px]">
-        <Image
-          src="/startinglogo.svg"
-          alt="About Us Hero"
-          fill
-          className="object-cover"
-        />
+      <section className="relative w-full h-[320px] md:h-[420px] overflow-hidden">
+        <div
+          className="absolute w-full h-[150%] top-[-25%]" // увеличиваем высоту и сдвигаем вверх на 25%, чтобы центр был в середине
+          style={{ transform: `translateY(${offset * 0.7}px)` }}
+        >
+          <Image
+            src="/startinglogo.svg"
+            alt="About Us Hero"
+            fill
+            className="object-cover object-center" // центрируем картинку
+          />
+        </div>
+
         <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-          <h1 className="text-white text-4xl md:text-5xl font-bold drop-shadow-lg">
+          <h1 className="text-white text-4xl md:text-5xl font-bold drop-shadow-lg text-center">
             About TravelQuest Okinawa
           </h1>
         </div>
       </section>
 
       {/* CONTENT */}
-      <section className="max-w-4xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-bold mb-4">Who We Are</h2>
+      <section className="max-w-3xl mx-auto px-6 py-10">
+        <h2 className="text-3xl font-bold mb-6 text-[#3e2723] text-center">
+          How It Works
+        </h2>
 
-        <p className="text-lg leading-relaxed mb-4">
-          Welcome to our handcrafted travel planner — a project built with love
-          and a genuine passion for exploring Japan. We know how overwhelming it
-          can be to search through endless guides, blogs, and videos, so we
-          created a tool that does the hard work for you.
+        <p className="text-lg leading-relaxed mb-4 pl-4">
+          <strong>Discover Okinawa easily!</strong> Our gamified travel planner
+          is made for first-time visitors who want a simple, fun way to explore
+          the island without getting lost in endless guides.
         </p>
 
-        <p className="text-lg leading-relaxed mb-4">
-          Our team personally researched, selected, and curated only the most
-          unique, beautiful, and worthwhile locations across Japan. Every
-          region, every category, and every recommended spot has been handpicked
-          to give you the best experience possible — without the noise, without
-          the stress.
+        <p className="text-lg leading-relaxed mb-4 pl-4">
+          We carefully selected the best beaches, hidden gems, and must-see
+          attractions across Okinawa. Everything is handpicked so you can
+          <strong> enjoy your trip without stress.</strong>
         </p>
 
-        <p className="text-lg leading-relaxed mb-6">
-          Whether you&apos;re planning your first trip to Japan or exploring new
-          hidden gems, our interactive map, smart route builder, and visual
-          guides will help you navigate effortlessly. We built this project from
-          scratch — from designing the maps to writing the algorithms — all to
-          help travelers enjoy Japan in a simple, fun, and meaningful way.
+        <p className="text-lg leading-relaxed mb-6 pl-4">
+          With cute avatars, an interactive map, and a bright, intuitive
+          interface, you can plan your route, save your favorite spots, and
+          explore Okinawa at your own pace.
         </p>
       </section>
 
