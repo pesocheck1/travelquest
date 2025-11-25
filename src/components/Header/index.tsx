@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React from "react";
+import Link from "next/link";
 
 export default function Header() {
   const handleLogoClick = () => {
@@ -31,12 +32,14 @@ export default function Header() {
       </div>
 
       <nav className="flex gap-6 items-center 2xl:gap-10">
-        <button
-          type="button"
-          className="text-white font-semibold text-xl hover:opacity-75 transition cursor-pointer"
-        >
-          About us
-        </button>
+        <Link href="/aboutus">
+          <button
+            type="button"
+            className="text-white font-semibold text-xl hover:opacity-75 transition cursor-pointer"
+          >
+            About us
+          </button>
+        </Link>
 
         <button
           type="button"
