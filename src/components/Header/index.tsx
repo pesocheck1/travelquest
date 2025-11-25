@@ -32,13 +32,11 @@ export default function Header() {
       </div>
 
       <nav className="flex gap-6 items-center 2xl:gap-10">
-        <Link href="/aboutus">
-          <button
-            type="button"
-            className="text-white font-semibold text-xl hover:opacity-75 transition cursor-pointer"
-          >
-            About us
-          </button>
+        <Link
+          href="/aboutus"
+          className="text-white font-semibold text-xl hover:opacity-75 transition cursor-pointer"
+        >
+          About us
         </Link>
 
         <button
