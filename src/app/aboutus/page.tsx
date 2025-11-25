@@ -72,20 +72,20 @@ export default function AboutUsPage() {
       <Header />
 
       {/* HERO */}
-      <section className="relative w-full h-[320px] md:h-[420px] overflow-hidden">
+      <section className="relative w-full h-[480px] overflow-hidden">
         <div
-          className="absolute w-full h-[150%] top-[-25%]" // увеличиваем высоту и сдвигаем вверх на 25%, чтобы центр был в середине
+          className="absolute w-full h-[150%] top-[-13%]" // увеличиваем высоту и сдвигаем вверх на 25%, чтобы центр был в середине
           style={{ transform: `translateY(${offset * 0.7}px)` }}
         >
           <Image
-            src="/startinglogo.svg"
+            src="/team.svg"
             alt="About Us Hero"
             fill
             className="object-cover object-center" // центрируем картинку
           />
         </div>
 
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
           <h1 className="text-white text-4xl md:text-5xl font-bold drop-shadow-lg text-center">
             About TravelQuest Okinawa
           </h1>
