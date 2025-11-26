@@ -217,12 +217,6 @@ const categories: Category[] = [
 ];
 
 export default function BlogPage() {
-  // const [openCategory, setOpenCategory] = useState<string | null>(null);
-
-  // const toggleCategory = (name: string) => {
-  //   setOpenCategory(openCategory === name ? null : name);
-  // };
-
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeLocation, setActiveLocation] = useState<Location | null>(null);
   const resetState = () => {
@@ -237,6 +231,13 @@ export default function BlogPage() {
         <h1 className="text-4xl font-bold mb-10 text-center text-[#3e2723]">
           Okinawa Travel Recommendations
         </h1>
+        <Image
+          src="/flower.svg"
+          alt=""
+          width={230}
+          height={230}
+          className="absolute right-[20px] top-9/10 -translate-y-1/2 opacity-90"
+        />
 
         <div className="flex gap-10 pt-4">
           {/* ---------------- ЛЕВОЕ МЕНЮ КАТЕГОРИЙ ---------------- */}
@@ -272,7 +273,6 @@ export default function BlogPage() {
 
           {/* ---------------- ПРАВЫЙ БЛОК ---------------- */}
           <div className="flex-1 min-h-[420px] relative">
-            {/* Если категория не выбрана → заставка */}
             {!selectedCategory && (
               <div className="h-full flex flex-col items-center justify-start text-center opacity-90">
                 <Image
@@ -282,9 +282,6 @@ export default function BlogPage() {
                   height={620}
                   className="mb-6"
                 />
-                {/* <p className="text-xl text-[#3e2723]">
-                  Choose a category to see locations
-                </p> */}
               </div>
             )}
 
@@ -319,7 +316,7 @@ export default function BlogPage() {
         {/* ---------------- МОДАЛЬНОЕ ОКНО ---------------- */}
         {activeLocation && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
             onClick={() => setActiveLocation(null)}
           >
             <div
@@ -327,7 +324,7 @@ export default function BlogPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Контейнер со скроллом */}
-              <div className="scrollbar-hide overflow-y-auto max-h-[90vh] pl-2 pr-1 py-4">
+              <div className="scrollbar-hide overflow-y-auto max-h-[90vh] pl-2 pr-1 py-4 overflow-x-hidden">
                 {/* Фото-карусель */}
                 <Slider
                   dots={true}
@@ -336,8 +333,8 @@ export default function BlogPage() {
                   slidesToShow={1}
                   slidesToScroll={1}
                   arrows={true}
-                  autoplay={true} // включаем автопрокрутку
-                  autoplaySpeed={4000} // время между сменой слайдов (мс)
+                  autoplay={true}
+                  autoplaySpeed={4000}
                 >
                   {activeLocation.images.map((img: string) => (
                     <div key={img} className="px-1 flex justify-center">
