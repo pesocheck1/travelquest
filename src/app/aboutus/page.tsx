@@ -68,20 +68,20 @@ export default function AboutUsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fff8e1] text-[#3e2723]">
+    <div className="min-h-screen flex flex-col text-[#3e2723]">
       <Header />
 
       {/* HERO */}
       <section className="relative w-full h-[480px] overflow-hidden">
         <div
-          className="absolute w-full h-[150%] top-[-13%]" // увеличиваем высоту и сдвигаем вверх на 25%, чтобы центр был в середине
+          className="absolute w-full h-[150%] top-[-13%]"
           style={{ transform: `translateY(${offset * 0.7}px)` }}
         >
           <Image
             src="/team.svg"
             alt="About Us Hero"
             fill
-            className="object-cover object-center" // центрируем картинку
+            className="object-cover object-center"
           />
         </div>
 
