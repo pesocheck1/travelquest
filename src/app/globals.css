@@ -32,3 +32,19 @@ body {
 .animate-pulseGlow {
   animation: pulseGlow 1.5s infinite ease-in-out;
 }
+.scrollbar-hide::-webkit-scrollbar {
+  height: 2px; /* толщина горизонтального скролла */
+  width: 10px; /* толщина вертикального скролла */
+}
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: #f0f0f0; /* цвет дорожки */
+  border-radius: 4px;
+}
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background-color: #f4e47a; /* цвет ползунка */
+  border-radius: 4px;
+  border: 2px solid #f0f0f0; /* отступ, чтобы был "плавающий" */
+}
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background-color: #f8db20; /* оставляем тот же цвет */
+}

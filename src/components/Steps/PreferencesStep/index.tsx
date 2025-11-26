@@ -115,7 +115,7 @@ export default function PreferencesStep({
         </div>
 
         {/* Правая панель */}
-        <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col justify-between overflow-y-auto">
+        <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col justify-between overflow-y-auto scrollbar-hide">
           <div>
             <h2 className="text-xl font-bold mb-4 text-[#3e2723]">
               Route settings

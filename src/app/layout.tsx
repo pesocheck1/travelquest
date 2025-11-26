@@ -16,7 +16,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon1.ico?v=2" />
       </head>
-      <body className="min-h-screen bg-white text-gray-800">
+      <body className="min-h-screen bg-white text-gray-800 scrollbar-hide">
         {children}
         <footer
           className="bg-[#e74c3c] text-white py-4 text-center"

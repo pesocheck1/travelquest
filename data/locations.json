@@ -637,6 +637,21 @@
       "closestStartingPoint": "Naha Airport"
     },
     {
+      "name": "Jack's steak house",
+      "desc": "This is a long-established steakhouse in Naha City, Okinawa, popular with both tourists and locals.",
+      "image": "/locations/SO11.png",
+      "category": "Food",
+      "left": "19%",
+      "top": "30%",
+      "globalLeft": "15%",
+      "globalTop": "80%",
+      "lat": 26.212816468573195,
+      "lng": 127.67246018104784,
+      "place_id": "ChIJ22ZssJlp5TQR9_xYHgr0hFo",
+      "visitTime": 60,
+      "closestStartingPoint": "Naha Airport"
+    },
+    {
       "name": "Okinawa soba EIBUN",
       "desc": "There are a wide variety of combinations of noodles, soups and toppings.",
       "image": "/locations/SO10.png",

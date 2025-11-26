@@ -288,7 +288,7 @@ Props) {
         </div>
 
         {/* Правая панель */}
-        <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col h-full overflow-y-auto">
+        <div className="w-[260px] 2xl:w-[340px] bg-[#fff8e1] m-2 rounded shadow-inner p-5 flex flex-col h-full overflow-y-auto scrollbar-hide">
           <h2 className="text-xl font-bold mb-3 text-[#3e2723]">Your route</h2>
 
           {/* Стартовая строка */}

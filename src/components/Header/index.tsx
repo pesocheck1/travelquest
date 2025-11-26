@@ -4,7 +4,11 @@ import Image from "next/image";
 import React from "react";
 import Link from "next/link";
 
-export default function Header() {
+type HeaderProps = {
+  onBlogClick?: () => void; // необязательная функция
+};
+
+export default function Header({ onBlogClick }: HeaderProps) {
   const handleLogoClick = () => {
     window.location.href = "/";
   };
@@ -39,13 +43,13 @@ export default function Header() {
           About us
         </Link>
 
-        <button
-          type="button"
+        <Link
+          href="/blog"
           className="text-white font-semibold text-xl hover:opacity-75 transition cursor-pointer"
+          onClick={() => onBlogClick?.()}
         >
           Blog
-        </button>
-
+        </Link>
         <button
           type="button"
           className="bg-white text-orange-600 font-bold px-4 py-1 rounded-md 2xl:px-6 2xl:py-2 text-xl hover:bg-orange-100 transition cursor-pointer"

@@ -104,7 +104,7 @@ export default function HomePage() {
   }, [startTime, setStartTime]);
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center">
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center scrollbar-hide">
       <Header />
 
       <main className="flex flex-1 items-center justify-center w-full px-4 min-h-screen">
