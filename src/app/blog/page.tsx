@@ -373,7 +373,7 @@ export default function BlogPage() {
                     rel="noopener noreferrer"
                     className="inline-block bg-[#e74c3c] font-bold text-white px-6 py-2 rounded-lg hover:bg-[#d84333] transition"
                   >
-                    Visit website
+                    Visit Website
                   </a>
                 </div>
 

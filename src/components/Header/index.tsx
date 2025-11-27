@@ -50,12 +50,12 @@ export default function Header({ onBlogClick }: HeaderProps) {
         >
           Blog
         </Link>
-        <button
-          type="button"
+        <Link
+          href="/login"
           className="bg-white text-orange-600 font-bold px-4 py-1 rounded-md 2xl:px-6 2xl:py-2 text-xl hover:bg-orange-100 transition cursor-pointer"
         >
           Log in
-        </button>
+        </Link>
       </nav>
     </header>
   );
