@@ -74,29 +74,29 @@ export default function MapStep({
     {
       name: "Yanbaru" as RegionName,
       desc: "Famous for Cape Hedo, Yanbaru National Park, Tataki Falls",
-      left: "82%",
-      top: "5%",
+      left: "88%",
+      top: "19%",
       images: ["/locations/y1.png", "/locations/y6.png"],
     },
     {
       name: "Motobu" as RegionName,
       desc: "Famous for Churaumi Aquarium, Junglia Okinawa and Nakijin Castle Ruins",
-      left: "13%",
-      top: "12%",
+      left: "28%",
+      top: "20%",
       images: ["/locations/m2.png", "/locations/m1.png"],
     },
     {
       name: "Central Okinawa" as RegionName,
       desc: "Famous for American Village, Botanical Gardens and Sunset Beach",
-      left: "-1%",
-      top: "40%",
+      left: "13%",
+      top: "50%",
       images: ["/locations/CO1.png", "/locations/CO3.png"],
     },
     {
       name: "South Okinawa" as RegionName,
       desc: "Famous for Shuri Castle, Kokusai-dori and Okinawa World",
-      left: "40%",
-      top: "70%",
+      left: "54%",
+      top: "80%",
       images: ["/locations/SO4.png", "/locations/SO7.png"],
     },
   ];
@@ -183,6 +183,7 @@ export default function MapStep({
                     left: region.left,
                     top: region.top,
                     width: "22%",
+                    transform: "translate(-50%, -50%)",
                     boxShadow:
                       selectedRegion === region.name
                         ? "0 0 20px 4px rgba(255, 223, 0, 0.8)"
